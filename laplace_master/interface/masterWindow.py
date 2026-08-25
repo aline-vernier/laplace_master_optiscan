@@ -12,13 +12,13 @@ from PyQt6.QtGui import QIcon
 import qdarkstyle
 from laplace_server.protocol import (
     DEVICE_CAMERA, DEVICE_OPT, DEVICE_SHOT,
-    AVAILABLE_CONTROLS
+    AVAILABLE_CONTROLS, DEVICE_SCAN
 )
 from laplace_log import log
 
 # project
 from interface.panels import (
-    ConnectionPanel, OptimizationPanel, LaserPanel
+    ConnectionPanel, OptimizationPanel, LaserPanel, ScanPanel
 )
 from interface.widgets import (
     SaveBar, ServerBar
@@ -33,7 +33,7 @@ class MasterWindow(QMainWindow):
     connect the interface and the server configurations. 
     '''
     
-    def __init__(self):
+    def __init__(self, flag: str="Optimizer"):
         '''
         Initialization of the 'MasterWindow' class.
         '''
@@ -46,12 +46,12 @@ class MasterWindow(QMainWindow):
             str(self.p.parent.parent / "config.ini"), 
             QSettings.Format.IniFormat
         )
-
+        self.optimize = "opt" in flag.lower() # Checks whether windiw should be launched for optimization or scan
         self.set_up()  # initialize the widgets and place them in the window
 
         # Manager handling one client per server
         self.client_manager = ClientManager()
-        # Brain organizing the optimizing queue
+        # Brain organizing the queue (optimizer or scan)
         self.brain = Brain(self.client_manager)
         
         # Ping timer
@@ -78,7 +78,6 @@ class MasterWindow(QMainWindow):
         self.brain_timer.start(brain_time_ms)
         
         self.actions()  # signals
-
 
     @property
     def saving_path(self) -> str:
@@ -143,14 +142,17 @@ class MasterWindow(QMainWindow):
         self.motorsConnectionPanel = ConnectionPanel("Control systems")
 
             # Bottom-right label
-        self.optimizationPanel = OptimizationPanel()
+        if self.optimize:
+            self.globalControlPanel = OptimizationPanel()
+        else:
+            self.globalControlPanel = ScanPanel()
 
             # Add widgets to the grid layout
         # grid_layout.addWidget(laser_label, 0, 0)
         grid_layout.addWidget(self.laser_panel, 0, 0)
         grid_layout.addWidget(self.diagsConnectionPanel, 0, 1)
         grid_layout.addWidget(self.motorsConnectionPanel, 1, 0)
-        grid_layout.addWidget(self.optimizationPanel, 1, 1)
+        grid_layout.addWidget(self.globalControlPanel, 1, 1)
 
             # Set column and row stretch
         grid_layout.setRowStretch(0, 1)
@@ -191,7 +193,7 @@ class MasterWindow(QMainWindow):
         self.motorsConnectionPanel.server_connection_changed.connect(
             lambda addr, state: self.client_manager.set_server_enabled(addr, state)
         )
-        self.optimizationPanel.server_connection_changed.connect(
+        self.globalControlPanel.server_connection_changed.connect(
             lambda addr, state: self.client_manager.set_server_enabled(addr, state)
         )
         self.laser_panel.server_connection_changed.connect(
@@ -205,7 +207,7 @@ class MasterWindow(QMainWindow):
             self.motorsConnectionPanel.update_server_last_msg
         )
         self.client_manager.server_contacted.connect(
-            self.optimizationPanel.update_server_last_msg
+            self.globalControlPanel.update_server_last_msg
         )
         self.client_manager.server_contacted.connect(
             self.laser_panel.update_server_last_msg
@@ -218,7 +220,7 @@ class MasterWindow(QMainWindow):
             self.motorsConnectionPanel.on_server_alive_changed
         )
         self.client_manager.server_pinged.connect(
-            self.optimizationPanel.on_server_alive_changed
+            self.globalControlPanel.on_server_alive_changed
         )
         self.client_manager.server_pinged.connect(
             self.laser_panel.on_server_alive_changed
@@ -231,26 +233,19 @@ class MasterWindow(QMainWindow):
 
         ### brain actions
             # transmit the motor control state to the brain
-        self.optimizationPanel.motor_control_changed.connect(
+        self.globalControlPanel.motor_control_changed.connect(
             self.brain.set_motor_control
         )
             # define if the brain is ready to brain
-        self.optimizationPanel.arm_changed.connect(
+        self.globalControlPanel.arm_changed.connect(
             self.brain.set_armed
         )
-            # use the brain next element in queue when button next queue clicked
-        # self.optimizationPanel.next_sample_clicked.connect(
-        #     lambda position_in_queue: self.brain._next(
-        #         self.laser_panel.shot_number, 
-        #         position_in_queue
-        #     )
-        # )
 
         self.brain.queue_updated.connect(
-            self.optimizationPanel.queue_viewer.set_queue
+            self.globalControlPanel.queue_viewer.set_queue
         )
 
-        self.optimizationPanel.queue_viewer.delete_current.connect(
+        self.globalControlPanel.queue_viewer.delete_current.connect(
             self.brain.delete_suggestion
         )
 
@@ -358,11 +353,18 @@ class MasterWindow(QMainWindow):
             log.info(f"New control system server added:")
         
         elif info.device == DEVICE_OPT:
-            self.optimizationPanel.add_server(
+            self.globalControlPanel.add_server(
                 address=info.address,
                 name=info.name or "Optimization"
             )
             log.info(f"New optimization server added:")
+
+        elif info.device == DEVICE_SCAN:
+            self.globalControlPanel.add_server(
+                address=info.address,
+                name=info.name or "Scan"
+            )
+            log.info(f"New scan server added:")
         
         elif info.device == DEVICE_SHOT:
             self.laser_panel.add_shot_number(
@@ -400,6 +402,9 @@ class MasterWindow(QMainWindow):
         elif device_type == DEVICE_OPT:
             self.brain.on_opt_data(address, data)
 
+        elif device_type == DEVICE_SCAN:
+            self.brain.on_opt_data(address, data)
+
 
     def poll_optimizer(self):
         for address, device in self.client_manager.server_devices.items():
@@ -407,6 +412,14 @@ class MasterWindow(QMainWindow):
                 data = self.client_manager.poll_optimizer(address)
                 if data:
                     self.brain.on_opt_data(address, data)
+
+
+    def poll_scanner(self):
+        for address, device in self.client_manager.server_devices.items():
+            if device == DEVICE_SCAN:
+                data = self.client_manager.poll_scanner(address)
+                if data:
+                    self.brain.on_scan_data(address, data)
 
 
     def closeEvent(self, event) -> None:

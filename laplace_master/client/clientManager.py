@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from PyQt6.QtCore import QObject, pyqtSignal
 from laplace_log import log
-from laplace_server.protocol import DEVICE_OPT
+from laplace_server.protocol import DEVICE_OPT, DEVICE_SCAN
 
 
 # project
@@ -116,6 +116,7 @@ class ClientManager(QObject):
                 freedom = 0
 
             self.server_devices[address] = device  # store the server device
+            print(f'Device: {device}')
             
             return ServerInfo(     # return the structured informations
                 address=address, 
@@ -196,6 +197,20 @@ class ClientManager(QObject):
             return None
 
         if self.server_devices[address] != DEVICE_OPT:
+            return None
+
+        reply = client.get()
+        if reply is None:
+            return None
+
+        return reply.get("payload", {}).get("data", {})
+
+    def poll_scanner(self, address: str) -> dict | None:
+        client = self.clients.get(address)
+        if not client or not client.connected:
+            return None
+
+        if self.server_devices[address] != DEVICE_SCAN:
             return None
 
         reply = client.get()

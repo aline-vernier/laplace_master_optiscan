@@ -103,7 +103,7 @@ class Brain(QObject):
 
     def set_armed(self, armed: bool) -> None:
         self.reset_shot_system()
-        log.info("System armed: starting optimization loop")
+        log.info("System armed: starting loop")
         self.armed = armed
 
 
@@ -360,6 +360,8 @@ class Brain(QObject):
         
         # self._next()  # provide the next point to the control system
 
+    def on_scan_data(self):
+        pass
 
     def _next(self, shot_number: int, next_in_queue: int | None=None) -> None:
         '''
