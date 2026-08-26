@@ -415,7 +415,6 @@ class Brain(QObject):
         self.pending_motor_addresses = set(self.current["inputs"].keys())  # addresses of the motors to move
         self.expected_sources = set(self.obj_spec.keys())                  # addresses of the diagnostics we are waiting for
 
-
         # filter the allowed motors
         inputs = {}
         for addr, targets in self.current["inputs"].items():
