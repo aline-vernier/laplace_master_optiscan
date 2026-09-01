@@ -9,7 +9,7 @@ from utils.json_encoder import json_style
 from utils.config_helper import get_from_config
 
 
-class Brain(QObject):
+class ScanBrain(QObject):
     '''
     Central controller of the optimization workflow.
 
@@ -106,33 +106,6 @@ class Brain(QObject):
         log.info("System armed: starting loop")
         self.armed = armed
 
-
-    # def on_shot(self, shot_number: int) -> None:
-    #     '''
-    #     Function made to update the shot number.
-    #     If the new shot number to come is not higher than the
-    #     last shot number, it is discarded.
-    #     '''
-    #     if not self.armed:
-    #         return
-        
-    #     if self.desync_mode:
-    #         self._handle_resync_shot(shot_number)
-    #         return
-        
-    #     if shot_number <= self.latest_shot_number:  # if the new shot number to come is < or = to the last one we got
-    #         return                                  # ignore it, it's a duplicate or a out-of-order
-
-    #     log.debug(f"[Shot] new shot to come={shot_number} | shot that has just been done={self.latest_shot_number} | queued_new_shot={self.new_shot_available}")
-
-    #     self.latest_shot_number = shot_number
-    #     self.new_shot_available = True
-    
-    # def on_shot(self, shot_number: int) -> None:
-    #     if not self.armed:
-    #         return
-
-    #     self._observe_shot(shot_number, source="global")
     
     def on_shot(self, shot_number: int) -> None:
         if not self.armed:
@@ -151,10 +124,10 @@ class Brain(QObject):
 
         self.latest_shot_number = shot_number
 
-        # self.shot_number = shot_number
-
         self.new_shot_available = True
         
+    def load_controls(self, message) -> None:
+        self.client_manager.set_scan_controls()
 
     def tick(self) -> None:
         '''
@@ -174,24 +147,12 @@ class Brain(QObject):
                 self._next(self.latest_shot_number)      # start the next sample
                 self.new_shot_available = False          # we considered the new shot 
 
-        # we are waiting for measurement
-        # if not self.waiting:
-        #     # we are idle → start next sample if possible
-        #     self._next(self.latest_shot_number)
-        #     return
 
         # otherwise we are waiting for a diagnostic
         if self._can_finalize():                # verify if the sample has finished since last tick           # if self._is_measurement_complete():
             log.debug("Sample finilized.")
             self._finalize_current_sample()
 
-    # def _is_measurement_complete(self) -> bool:
-    #     return (
-    #         self.waiting
-    #         and not self.motion_pending
-    #         and hasattr(self, "expected_sources")
-    #         and not self.expected_sources
-    #     )
 
     def _can_finalize(self) -> bool:
         '''
@@ -204,13 +165,7 @@ class Brain(QObject):
             and len(self.expected_sources) == 0           # there is no diagnostic expected
             and len(self.pending_motor_addresses) == 0    # there is no motor expected to move
         )
-        # if not ok:
-        #     log.debug(
-        #         f"[Brain] finalize blocked | "
-        #         f"waiting={self.waiting}, motion_pending={self.motion_pending}, "
-        #         f"expected_sources={getattr(self, 'expected_sources', None)}, "
-        #         f"pending_motors={self.pending_motor_addresses}"                
-        #     )
+
         
         return ok
     
@@ -583,11 +538,6 @@ class Brain(QObject):
             if k in values:
                 self.current_measurements[address][k] = values[k]
 
-        # log.info(
-        #     f"expected_keys={expected_keys} | "
-        #     f"received_keys={list(values.keys())} | "
-        #     f"stored_keys={list(self.current_measurements[address].keys())}"
-        # )
 
         # Check completion for this address
         if len(self.current_measurements[address]) == len(expected_keys):
@@ -596,10 +546,6 @@ class Brain(QObject):
         
         self.shot_number_from_diags[address] = values["shot_number"]
 
-        # Finalize sample if everything is collected
-        # if not self.expected_sources:
-        #     log.info("All diagnostic measurements collected. Finalizing sample.")
-        #     self._finalize_current_sample()
 
 
     def _finalize_current_sample(self) -> None:

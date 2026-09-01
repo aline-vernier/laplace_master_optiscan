@@ -116,7 +116,7 @@ class ClientManager(QObject):
                 freedom = 0
 
             self.server_devices[address] = device  # store the server device
-            print(f'Device: {device}')
+            log.info(f'Device: {device}')
             
             return ServerInfo(     # return the structured informations
                 address=address, 
@@ -190,7 +190,32 @@ class ClientManager(QObject):
                 data = reply.get("payload", {}).get("data", {}) # extract the data from the reply
                 self.server_data_received.emit(address, data)   # transmit it to the control system panel
 
+    def get_all_controls(self) -> dict | None:
+        controls = dict({})
+        for address, client in self.clients.items():
+            info = client.info()
+            if info.get('device') == 'MOTOR':
+                name_list = info.get('name_list')
+                controls[address] = name_list 
+        return controls
 
+    def get_all_scanners(self) -> dict | None:
+        scanners = dict({})
+        for address, client in self.clients.items():
+            info = client.info()
+            if info.get('device') == 'SCAN':
+                name_list = info.get('name_list')
+                scanners[address] = name_list
+        return scanners
+
+    def set_scan_controls(self) -> None:
+        controls = self.get_all_controls()
+        scanners = self.get_all_scanners()
+        log.info(f'Controls: {controls}, scanners: {scanners}')
+        for address, _ in scanners.items():
+            client = self.clients[address]
+            client.set_actuators(controls)
+        
     def poll_optimizer(self, address: str) -> dict | None:
         client = self.clients.get(address)
         if not client or not client.connected:

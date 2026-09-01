@@ -24,7 +24,8 @@ from interface.widgets import (
     SaveBar, ServerBar
 )
 from client.clientManager import ClientManager
-from client.brain import Brain
+from client.optBrain import OptBrain
+from client.scanBrain import ScanBrain
 
 
 class MasterWindow(QMainWindow):
@@ -52,7 +53,10 @@ class MasterWindow(QMainWindow):
         # Manager handling one client per server
         self.client_manager = ClientManager()
         # Brain organizing the queue (optimizer or scan)
-        self.brain = Brain(self.client_manager)
+        if self.optimize:
+            self.brain = OptBrain(self.client_manager)
+        else:
+            self.brain = ScanBrain(self.client_manager)
         
         # Ping timer
         self.timer = QTimer()
@@ -63,9 +67,9 @@ class MasterWindow(QMainWindow):
         )
         self.timer.start(ping_time_ms)
 
-        self.opt_timer = QTimer()
-        self.opt_timer.timeout.connect(self.poll_optimizer)
-        self.opt_timer.start(ping_time_ms)
+        self.global_controller_timer = QTimer()
+        self.global_controller_timer.timeout.connect(self.poll_optimizer)
+        self.global_controller_timer.start(ping_time_ms)
 
 
         brain_time_ms = self.settings.value(
@@ -231,42 +235,66 @@ class MasterWindow(QMainWindow):
             self.route_server_data
         )
 
-        ### brain actions
+        ### brain actions - optimizer
             # transmit the motor control state to the brain
-        self.globalControlPanel.motor_control_changed.connect(
-            self.brain.set_motor_control
-        )
-            # define if the brain is ready to brain
-        self.globalControlPanel.arm_changed.connect(
-            self.brain.set_armed
-        )
-
-        self.brain.queue_updated.connect(
-            self.globalControlPanel.queue_viewer.set_queue
-        )
-
-        self.globalControlPanel.queue_viewer.delete_current.connect(
-            self.brain.delete_suggestion
-        )
-
-        # when the motor is enabled / disabled, set the corresponding information in brain
-        self.motorsConnectionPanel.motor_connection_changed.connect(
-            self.brain.set_motor_enabled
-        )
-
-        # when the shot number is modified, try to sample the next point
-        # self.laser_panel.shot_changed.connect(
-        #     lambda shot_number: self.brain._next(
-        #         shot_number=shot_number, 
-        #         next_in_queue=None
-        #     )
-        # )
-        self.laser_panel.shot_changed.connect(
-            lambda shot_number: self.brain.on_shot(
-                shot_number=shot_number, 
-                # next_in_queue=None
+        if self.optimize:
+            self.globalControlPanel.motor_control_changed.connect(
+                self.brain.set_motor_control
             )
-        )
+                # define if the brain is ready to brain
+            self.globalControlPanel.arm_changed.connect(
+                self.brain.set_armed
+            )
+
+            self.brain.queue_updated.connect(
+                self.globalControlPanel.queue_viewer.set_queue
+            )
+
+            self.globalControlPanel.queue_viewer.delete_current.connect(
+                self.brain.delete_suggestion
+            )
+
+            # when the motor is enabled / disabled, set the corresponding information in brain
+            self.motorsConnectionPanel.motor_connection_changed.connect(
+                self.brain.set_motor_enabled
+            )
+
+            self.laser_panel.shot_changed.connect(
+                lambda shot_number: self.brain.on_shot(
+                    shot_number=shot_number, 
+                )
+            )
+        else: 
+
+            self.globalControlPanel.load_controls_clicked.connect(
+                lambda message: self.brain.load_controls(message)
+            )
+            self.globalControlPanel.motor_control_changed.connect(
+                self.brain.set_motor_control
+            )
+                # define if the brain is ready to brain
+            self.globalControlPanel.arm_changed.connect(
+                self.brain.set_armed
+            )
+
+            self.brain.queue_updated.connect(
+                self.globalControlPanel.queue_viewer.set_queue
+            )
+
+            self.globalControlPanel.queue_viewer.delete_current.connect(
+                self.brain.delete_suggestion
+            )
+
+            # when the motor is enabled / disabled, set the corresponding information in brain
+            self.motorsConnectionPanel.motor_connection_changed.connect(
+                self.brain.set_motor_enabled
+            )
+
+            self.laser_panel.shot_changed.connect(
+                lambda shot_number: self.brain.on_shot(
+                    shot_number=shot_number, 
+                )
+            )
 
 
     def route_server(self, address: str) -> None:
@@ -390,13 +418,8 @@ class MasterWindow(QMainWindow):
 
         elif device_type == DEVICE_SHOT:
             self.laser_panel.set_shot_value(address, data)
-            # try:
-            #     self.brain._next()
-            # except Exception as e:
-            #     log.error(f"Error: when giving the next task to the brain.")
 
         elif device_type == DEVICE_CAMERA:
-            # print(f"data from cam = {data}")
             self.brain.on_measurement(address, data)
 
         elif device_type == DEVICE_OPT:

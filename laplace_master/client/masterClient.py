@@ -5,7 +5,8 @@ import time
 from laplace_log import log
 from laplace_server.protocol import (
     make_ping, make_info_request, make_opt_update,
-    make_get_request, make_save_request, make_set_request
+    make_get_request, make_save_request, make_set_request, 
+    make_set_actuators
 )
 
 # project
@@ -227,6 +228,18 @@ class MasterClient:
             make_set_request("Master", self.server_name, positions=positions)
         )
         
+        if not self._is_valid_reply(reply):
+            return None
+        
+        return reply
+
+    def set_actuators(self, controls: dict):
+        '''
+        '''
+        reply = self.send_message(
+            make_set_actuators("Master", self.server_name, controls)
+        )
+
         if not self._is_valid_reply(reply):
             return None
         

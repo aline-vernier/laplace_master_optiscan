@@ -20,6 +20,7 @@ class ScanPanel(QWidget):
     server_connection_changed = pyqtSignal(str, bool)
     motor_control_changed = pyqtSignal(bool)
     next_sample_clicked = pyqtSignal(int)
+    load_controls_clicked = pyqtSignal(str)
     arm_changed = pyqtSignal(bool)
 
     def __init__(self, title="Scan"):
@@ -71,6 +72,12 @@ class ScanPanel(QWidget):
         self.next_sample_button.clicked.connect(self.on_next_sample)
         self.hbox.addWidget(self.next_sample_button)
 
+        # Pass available controls to scan window
+        self.available_controls_button = QPushButton("Load controls")
+        self.available_controls_button.setEnabled(True)
+        self.available_controls_button.clicked.connect(self.load_controls)
+        self.hbox.addWidget(self.available_controls_button)
+
         self.main_layout.addLayout(self.hbox)
 
         # Connect / Disconnect button
@@ -107,6 +114,10 @@ class ScanPanel(QWidget):
         current_index = self.queue_viewer.current_index
         log.debug(f"Next sample button clicked. Current index = {current_index}")
         self.next_sample_clicked.emit(current_index)
+
+    def load_controls(self) -> None:
+        '''Emits a signal when load controls is clicked: signal caught by MasterWindow'''
+        self.load_controls_clicked.emit("Load controls")
 
 
     def on_disconnect(self) -> None:
