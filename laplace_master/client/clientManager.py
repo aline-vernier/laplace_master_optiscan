@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from PyQt6.QtCore import QObject, pyqtSignal
 from laplace_log import log
-from laplace_server.protocol import DEVICE_OPT, DEVICE_SCAN
+from laplace_server.protocol import DEVICE_OPT, DEVICE_SCAN, DEVICE_MOTOR
 
 
 # project
@@ -347,3 +347,25 @@ class ClientManager(QObject):
             return
 
         client.opt_update(data=payload)
+
+    def send_actuators_positions(self, 
+                              address: str,
+                              payload: dict) -> None:
+        '''Send the current actuator positions
+        to all scan devices
+        
+        Args:
+            address: (str) Server address
+            payload: (dict) Dict formatted as:
+        '''
+        client = self.clients[address]
+        scanners = self.get_all_scanners()
+        for scanner_address, _ in scanners.items():
+            client = self.clients[scanner_address]
+            client.scan_act_position_update(data=payload)
+
+
+            
+
+            
+

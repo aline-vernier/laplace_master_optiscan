@@ -406,11 +406,16 @@ class MasterWindow(QMainWindow):
 
     def route_server_data(self, address: str, data: dict):
 
+
         device_type = self.client_manager.server_devices.get(address)
 
         if device_type in AVAILABLE_CONTROLS:
             # when data is received, from motors, update the displayed motor positions
             self.motorsConnectionPanel.update_server_data(address, data)
+            if not self.optimize:
+                self.client_manager.send_actuators_positions(address, data)
+
+            
             try:
                 self.brain.on_motor_position_update(address, data)  # and brain measurement
             except Exception as e:
