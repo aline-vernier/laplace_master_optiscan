@@ -5,6 +5,8 @@ from PyQt6.QtCore import QObject, pyqtSignal
 from laplace_log import log
 from laplace_server.protocol import DEVICE_OPT, DEVICE_SCAN, DEVICE_MOTOR
 
+from utils.pack_actuator_data import pack_actuator_data
+
 
 # project
 from client.masterClient import MasterClient
@@ -194,16 +196,24 @@ class ClientManager(QObject):
         controls = dict({})
         for address, client in self.clients.items():
             info = client.info()
-            if info.get('device') == 'MOTOR':
-                name_list = info.get('name_list')
-                controls[address] = name_list 
+            if info is None:
+                return controls
+            
+            elif info.get('device') == 'MOTOR':
+                motor_names = {address: info.get('name_list')}
+                motor_state = {address: client.get()['payload']['data']}
+                controls = pack_actuator_data(motor_names, motor_state)
+                log.debug(f'Controls: {controls}')
         return controls
+
 
     def get_all_scanners(self) -> dict | None:
         scanners = dict({})
         for address, client in self.clients.items():
             info = client.info()
-            if info.get('device') == 'SCAN':
+            if info is None:
+                return scanners
+            elif info.get('device') == 'SCAN':
                 name_list = info.get('name_list')
                 scanners[address] = name_list
         return scanners
@@ -211,7 +221,7 @@ class ClientManager(QObject):
     def set_scan_controls(self) -> None:
         controls = self.get_all_controls()
         scanners = self.get_all_scanners()
-        log.info(f'Controls: {controls}, scanners: {scanners}')
+        log.debug(f'Controls: {controls}, scanners: {scanners}')
         for address, _ in scanners.items():
             client = self.clients[address]
             client.set_actuators(controls)

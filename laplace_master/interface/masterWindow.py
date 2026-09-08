@@ -203,7 +203,7 @@ class MasterWindow(QMainWindow):
         self.laser_panel.server_connection_changed.connect(
             lambda addr, state: self.client_manager.set_server_enabled(addr, state)
         )
-            # update the displaied time when a message is received
+            # update the displayed time when a message is received
         self.client_manager.server_contacted.connect(
             self.diagsConnectionPanel.update_server_last_msg
         )
@@ -267,8 +267,9 @@ class MasterWindow(QMainWindow):
         else: 
 
             self.globalControlPanel.load_controls_clicked.connect(
-                lambda message: self.brain.load_controls(message)
+                self.brain.load_controls
             )
+
             self.globalControlPanel.motor_control_changed.connect(
                 self.brain.set_motor_control
             )
@@ -393,6 +394,11 @@ class MasterWindow(QMainWindow):
                 name=info.name or "Scan"
             )
             log.info(f"New scan server added:")
+            # Start polling timer (to update motors as well as positions)
+            self.scan_timer = QTimer()
+            update_scan_time = 500 # In milliseconds
+            self.scan_timer.start(update_scan_time)
+            self.scan_timer.timeout.connect(self.update_scanner)  # Update scanner with current list of motors and positions
         
         elif info.device == DEVICE_SHOT:
             self.laser_panel.add_shot_number(
@@ -412,7 +418,8 @@ class MasterWindow(QMainWindow):
         if device_type in AVAILABLE_CONTROLS:
             # when data is received, from motors, update the displayed motor positions
             self.motorsConnectionPanel.update_server_data(address, data)
-            if not self.optimize:
+
+            if not self.optimize :
                 self.client_manager.send_actuators_positions(address, data)
 
             
@@ -431,7 +438,11 @@ class MasterWindow(QMainWindow):
             self.brain.on_opt_data(address, data)
 
         elif device_type == DEVICE_SCAN:
-            self.brain.on_opt_data(address, data)
+            #self.brain.on_opt_data(address, data)
+            pass
+
+    def update_scanner(self):
+        self.brain.load_controls()
 
 
     def poll_optimizer(self):

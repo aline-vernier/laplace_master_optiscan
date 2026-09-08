@@ -126,7 +126,7 @@ class ScanBrain(QObject):
 
         self.new_shot_available = True
         
-    def load_controls(self, message) -> None:
+    def load_controls(self) -> None:
         self.client_manager.set_scan_controls()
 
     def tick(self) -> None:

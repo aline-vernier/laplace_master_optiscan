@@ -1,6 +1,7 @@
 # libraries
 import zmq
 import time
+from PyQt6.QtCore import pyqtSignal
 
 from laplace_log import log
 from laplace_server.protocol import (
@@ -13,6 +14,7 @@ from laplace_server.protocol import (
 from utils.helper_address import normalize_address
 
 
+
 class MasterClient:
     '''
     Client responsible for communicating with a remote server via ZeroMQ (REQ/REP).
@@ -21,6 +23,7 @@ class MasterClient:
     get, set, save, and optimization updates. It handles socket creation,
     timeouts, reconnection logic, and basic reply validation.
     '''
+
     def __init__(self, address: str, timeout_ms: int = 2000):
         '''
         Initialize the MasterClient and connect to a server.
@@ -48,6 +51,7 @@ class MasterClient:
 
         self.last_contact_time = 0.0
         self.enabled = True
+        self.ready = False # True according to server criteria
         self.server_name = "Unknown"
         self.server_device = "Unknown"
         self.server_freedom = 0
@@ -282,9 +286,12 @@ class MasterClient:
                 The server reply if successful,
                 None otherwise.
         '''
-        reply = self.send_message(
-            make_scan_act_position_update("Master", self.server_name, data=data)
-        )
+        if self.ready:
+            reply = self.send_message(
+                make_scan_act_position_update("Master", self.server_name, data=data)
+            )
+        else :
+            return None
         
         if not self._is_valid_reply(reply):  # if the response is not valid
             return None                      # ignore it
