@@ -14,7 +14,7 @@ from laplace_server.protocol import DEVICE_MOTOR
 
 
 MOTOR_ADDRESS = "tcp://*:5555"
-SHOT_SUB_ADDRESS = "tcp://147.250.140.65:6009"
+SHOT_SUB_ADDRESS = "tcp://147.250.140.85:6009"
 
 
 class DummyMotor:

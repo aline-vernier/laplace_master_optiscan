@@ -17,8 +17,8 @@ from target_function_noisy import target_function_noisy
 target = target_function  # target function to use
 
 CAMERA_ADDRESS = "tcp://*:5556"
-MOTOR_ADDRESS = "tcp://147.250.140.65:5555"
-SHOT_SUB_ADDRESS = "tcp://147.250.140.65:6009"
+MOTOR_ADDRESS = "tcp://147.250.140.85:5555"
+SHOT_SUB_ADDRESS = "tcp://147.250.140.85:6009"
 
 
 class DummyCamera(QWidget):
@@ -161,12 +161,13 @@ class DummyCamera(QWidget):
         Sample the test function.
         """
         x1, x2 = self.get_motor()  # get the motor positions
+        print(f'Get motor pos. {(x1, x2)}')
 
         x1 = torch.tensor(x1)
         x2 = torch.tensor(x2)
 
         r = target(x1, x2)  # get the test function value
-
+        print(f'Get target {r}')
         self.value_label.setText(f"Value: {r[:, 0].item()} charge | {r[:, 1].item()} energy")
 
         return {
@@ -183,6 +184,7 @@ class DummyCamera(QWidget):
 
         while self.running:
             try:
+                print("Loop running")
                 topic = self.sub.recv_string()
                 event = self.sub.recv_json()
 

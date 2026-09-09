@@ -432,7 +432,9 @@ class MasterWindow(QMainWindow):
             self.laser_panel.set_shot_value(address, data)
 
         elif device_type == DEVICE_CAMERA:
-            self.brain.on_measurement(address, data)
+            #self.brain.on_measurement(address, data)
+            if data != {}:
+                log.info(f'Data from camera: {data}')
 
         elif device_type == DEVICE_OPT:
             self.brain.on_opt_data(address, data)

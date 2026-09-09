@@ -498,10 +498,6 @@ class ScanBrain(QObject):
                     log.debug(f"The dropped diagnostic had shot number {data['shot_number']}")
             return
 
-        if address not in self.obj_spec:   # if a measure is received from an unexpected address
-            if self.is_trig_logs and data:
-                log.debug(f"The method on_measurement was triggered but we do not have the adress ({address}) of this objective in our list of objectives ({self.obj_spec}).")
-            return                         # ignore it
 
         values = data
         if not isinstance(values, dict):
@@ -510,8 +506,7 @@ class ScanBrain(QObject):
         
         shot = values.get("shot_number")
         self._observe_shot(shot, source=f"diag:{address}")
-        # shot = values.get("shot_number")
-        # log.debug(f"values = {values}")
+
         if shot is None:
             log.debug("Missing shot_number, dropping diagnostic")
             return
@@ -529,22 +524,8 @@ class ScanBrain(QObject):
         # Initialize storage
         # self.current_measurements.setdefault(address, {})  # create a key with empty dict in current_measurements
 
-        if address not in self.current_measurements:
-            self.current_measurements[address] = {}
-
-        expected_keys = self.obj_spec[address]  # a list of objective names
         
-        for k in expected_keys:
-            if k in values:
-                self.current_measurements[address][k] = values[k]
-
-
-        # Check completion for this address
-        if len(self.current_measurements[address]) == len(expected_keys):
-            self.expected_sources.discard(address)
-        # print(f"expected sources remaining: {self.expected_sources}")
-        
-        self.shot_number_from_diags[address] = values["shot_number"]
+        #self.shot_number_from_diags[address] = values["shot_number"]
 
 
 
