@@ -207,6 +207,20 @@ class ClientManager(QObject):
         return controls
 
 
+    def get_all_diagnostics(self) -> dict | None:
+        diagnostics = dict({})
+        for address, client in self.clients.items():
+            info = client.info()
+            if info is None:
+                return diagnostics
+            
+            elif info.get('device') == 'CAMERA':
+                camera_name = info.get('name')
+                camera_data = client.get()['payload']['data']
+                diagnostics[address] = {'name': camera_name, 'data': camera_data}
+        return diagnostics
+
+    
     def get_all_scanners(self) -> dict | None:
         scanners = dict({})
         for address, client in self.clients.items():
@@ -218,6 +232,7 @@ class ClientManager(QObject):
                 scanners[address] = name_list
         return scanners
 
+
     def set_scan_controls(self) -> None:
         controls = self.get_all_controls()
         scanners = self.get_all_scanners()
@@ -225,7 +240,15 @@ class ClientManager(QObject):
         for address, _ in scanners.items():
             client = self.clients[address]
             client.set_actuators(controls)
-        
+
+    def set_scan_diagnostics(self) -> None:
+        diagnostics = self.get_all_diagnostics()
+        scanners = self.get_all_scanners()
+        log.debug(f'Diagnostics: {diagnostics}, scanners: {scanners}')
+        for address, _ in scanners.items():
+            client = self.clients[address]
+            client.set_diagnostics(diagnostics)
+    
     def poll_optimizer(self, address: str) -> dict | None:
         client = self.clients.get(address)
         if not client or not client.connected:

@@ -398,7 +398,9 @@ class MasterWindow(QMainWindow):
             self.scan_timer = QTimer()
             update_scan_time = 500 # In milliseconds
             self.scan_timer.start(update_scan_time)
-            self.scan_timer.timeout.connect(self.update_scanner)  # Update scanner with current list of motors and positions
+            # Update scanner with current list of motors and positions
+            # and diagnostics and measurement names
+            self.scan_timer.timeout.connect(self.update_scanner)  
         
         elif info.device == DEVICE_SHOT:
             self.laser_panel.add_shot_number(
@@ -419,10 +421,6 @@ class MasterWindow(QMainWindow):
             # when data is received, from motors, update the displayed motor positions
             self.motorsConnectionPanel.update_server_data(address, data)
 
-            if not self.optimize :
-                self.client_manager.send_actuators_positions(address, data)
-
-            
             try:
                 self.brain.on_motor_position_update(address, data)  # and brain measurement
             except Exception as e:

@@ -128,6 +128,8 @@ class ScanBrain(QObject):
         
     def load_controls(self) -> None:
         self.client_manager.set_scan_controls()
+        self.client_manager.set_scan_diagnostics()
+        
 
     def tick(self) -> None:
         '''
