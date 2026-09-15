@@ -267,7 +267,7 @@ class MasterWindow(QMainWindow):
         else: 
 
             self.globalControlPanel.load_controls_clicked.connect(
-                self.brain.load_controls
+                self.brain.update_controls_and_diagnostics
             )
 
             self.globalControlPanel.motor_control_changed.connect(
@@ -442,7 +442,7 @@ class MasterWindow(QMainWindow):
             pass
 
     def update_scanner(self):
-        self.brain.load_controls()
+        self.brain.update_controls_and_diagnostics()
 
 
     def poll_optimizer(self):

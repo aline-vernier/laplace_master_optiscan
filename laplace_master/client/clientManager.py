@@ -216,8 +216,9 @@ class ClientManager(QObject):
             
             elif info.get('device') == 'CAMERA':
                 camera_name = info.get('name')
-                camera_data = client.get()['payload']['data']
-                diagnostics[address] = {'name': camera_name, 'data': camera_data}
+                #camera_data = client.get()['payload']['data']
+                camera_plottables_list = info.get('plottables_list')
+                diagnostics[address] = {'name': camera_name, 'plottables_list': camera_plottables_list}
         return diagnostics
 
     
