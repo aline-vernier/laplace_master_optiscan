@@ -438,8 +438,8 @@ class MasterWindow(QMainWindow):
             self.brain.on_opt_data(address, data)
 
         elif device_type == DEVICE_SCAN:
-            #self.brain.on_opt_data(address, data)
-            pass
+            if data:
+                self.brain.on_scan_data(address, data)
 
     def update_scanner(self):
         self.brain.update_controls_and_diagnostics()

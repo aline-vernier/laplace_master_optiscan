@@ -7,6 +7,7 @@ from laplace_server.protocol import DEVICE_GAS, DEVICE_MOTOR
 from client.clientManager import ClientManager
 from utils.json_encoder import json_style
 from utils.config_helper import get_from_config
+from utils.pack_actuator_data import make_position_queue
 
 
 class ScanBrain(QObject):
@@ -317,8 +318,46 @@ class ScanBrain(QObject):
         
         # self._next()  # provide the next point to the control system
 
-    def on_scan_data(self):
-        pass
+    def on_scan_data(self, scan_address: str, 
+                        settings: dict) -> None:
+        '''
+        Handles incoming settings from the scan server.
+
+        Resets the current state, unpacks the settings dictionary into a list of samples,
+        loads samples into the queue and starts the scan if possible.
+
+        Args:
+            scan_address: (str)
+                Address of the scan server.
+
+            data: (dict)
+                Payload containing scan settings.
+        '''
+        log.info(f"Scan settings received {settings}. Updating queue")
+                # reset the attributes
+        self.suggestions.clear()
+        self.results.clear()
+        self.obj_spec.clear()
+        self.current = None
+        self.waiting = False
+        log.info("Previous queue cleared.")
+
+        for address, controls in settings.items():
+            log.info(f'Address: {address}, controls: {controls}')
+            # sorted_controls = sorted(
+            #     controls.items(),
+            #     key=lambda item: item[1]['rank']
+            # )
+            # self.scan_settings[address] = sorted_controls
+            # for name, scan in sorted_controls:
+            #     current = scan['current']
+            #     start = scan['start']
+            #     stop = scan['stop']
+            #     spacing = scan['step']
+            #     rank = scan['rank']
+            #     log.info(f'current: {current}, start: {start}, stop: {stop}, spacing: {spacing}, rank: {rank} ')
+
+
 
     def _next(self, shot_number: int, next_in_queue: int | None=None) -> None:
         '''

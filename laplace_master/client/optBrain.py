@@ -332,8 +332,7 @@ class OptBrain(QObject):
         self.queue_updated.emit(self.suggestions, self.obj_spec)
         
 
-    def on_scan_data(self):
-        pass
+
 
     def _next(self, shot_number: int, next_in_queue: int | None=None) -> None:
         '''
