@@ -342,20 +342,10 @@ class ScanBrain(QObject):
         self.waiting = False
         log.info("Previous queue cleared.")
 
-        for address, controls in settings.items():
-            log.info(f'Address: {address}, controls: {controls}')
-            # sorted_controls = sorted(
-            #     controls.items(),
-            #     key=lambda item: item[1]['rank']
-            # )
-            # self.scan_settings[address] = sorted_controls
-            # for name, scan in sorted_controls:
-            #     current = scan['current']
-            #     start = scan['start']
-            #     stop = scan['stop']
-            #     spacing = scan['step']
-            #     rank = scan['rank']
-            #     log.info(f'current: {current}, start: {start}, stop: {stop}, spacing: {spacing}, rank: {rank} ')
+
+        queue = make_position_queue(settings) 
+        log.info(f'Queue: {queue}')
+
 
 
 
