@@ -125,6 +125,7 @@ class OptBrain(QObject):
         self.latest_shot_number = shot_number
 
         self.new_shot_available = True
+        log.info(f'New shot is available: {self.new_shot_available}')
         
 
     def tick(self) -> None:
@@ -354,6 +355,7 @@ class OptBrain(QObject):
             return
 
         # if we are waiting for a measure 
+        log.info(f'Motor enabled, shot num > 0, and new shot is available')
         if self.waiting:
             if self.is_trig_logs:
                 log.debug(f"The method _next was triggered while we were still waiting for a diagnostic (shotnumber {self.shot_number}).\n"
@@ -372,8 +374,10 @@ class OptBrain(QObject):
 
         if next_in_queue is None:
             next_in_queue = 0
+            
 
         self.shot_number = shot_number  # update the shot number
+        log.info(f'Shot number is updated in _next to {shot_number}, popping suggestion.')
 
         self.current = self.suggestions.pop(next_in_queue)  # get the current point to sample and pop it from the suggestions
         self.queue_updated.emit(self.suggestions, self.obj_spec)
@@ -419,6 +423,7 @@ class OptBrain(QObject):
     def on_motor_position_update(self, address: str, positions: dict):
         # update the motor mask
         motor_list = self.motors.get(address)
+
 
         if motor_list:
             for i, pos in enumerate(positions.get("positions", [])):

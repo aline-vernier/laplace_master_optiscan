@@ -193,7 +193,7 @@ class DummyCamera(QWidget):
                 completed_shot = shot - 1               # shot that just been completed
                 self.last_shot = completed_shot         # store last completed shot
 
-                time.sleep(0.2)  # camera processing
+                time.sleep(2)  # camera processing
 
                 data = self.measure(completed_shot)    # compute the test function
                 self.server.set_data(data)             # set the values in the LHC server

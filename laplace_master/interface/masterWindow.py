@@ -86,7 +86,7 @@ class MasterWindow(QMainWindow):
     @property
     def saving_path(self) -> str:
         '''
-        Property made to have a conveniant access to the saving path.
+        Property made to have a convenient access to the saving path.
         '''
         return self.save_bar.saving_path
 
@@ -430,9 +430,8 @@ class MasterWindow(QMainWindow):
             self.laser_panel.set_shot_value(address, data)
 
         elif device_type == DEVICE_CAMERA:
-            #self.brain.on_measurement(address, data)
-            if data != {}:
-                log.info(f'Data from camera: {data}')
+            if self.optimize: 
+                self.brain.on_measurement(address, data)
 
         elif device_type == DEVICE_OPT:
             self.brain.on_opt_data(address, data)
