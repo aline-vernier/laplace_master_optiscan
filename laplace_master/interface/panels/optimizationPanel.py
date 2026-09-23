@@ -9,7 +9,7 @@ from PyQt6.QtCore import pyqtSignal
 
 # project
 from interface.widgets import ServerItemWidget
-from interface.widgets import QueueViewerWidget
+from interface.widgets import OptQueueViewerWidget
 
 class OptimizationPanel(QWidget):
     '''
@@ -42,7 +42,7 @@ class OptimizationPanel(QWidget):
         self.main_layout.addWidget(self.server_list_widget)
 
         # QueueViewerWidget
-        self.queue_viewer = QueueViewerWidget()
+        self.queue_viewer = OptQueueViewerWidget()
         self.main_layout.addWidget(self.queue_viewer)
 
         # hbox for control system

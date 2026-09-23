@@ -345,8 +345,7 @@ class ScanBrain(QObject):
 
         queue = make_position_queue(settings) 
         log.info(f'Queue: {queue}')
-
-
+        self.queue_updated.emit(queue)
 
 
     def _next(self, shot_number: int, next_in_queue: int | None=None) -> None:

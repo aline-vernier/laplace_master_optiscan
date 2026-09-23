@@ -31,6 +31,9 @@ def make_position_queue(settings: dict) -> list[dict]:
     """
     Convert scan settings into a queue of motor positions.
 
+    A motor that is not present in the scan settings gets None as
+    its position, meaning that motor should not be moved.
+
     Parameters
     ----------
     settings : dict
@@ -43,47 +46,27 @@ def make_position_queue(settings: dict) -> list[dict]:
                     'stop': float,
                     'step': float,
                     'rank': int,
-                    'index': int
+                    'index': int,
+                    'motor count': int
                 }],
                 ...
-            ],
-            ...
+            ]
         }
 
     Returns
     -------
     list[dict]
-        A list of dictionaries. Each dictionary contains one list of
-        motor positions per address.
-
-        Example:
-        [
-            {
-                'address1': [x1, x2],
-                'address2': [y1, y2]
-            },
-            {
-                'address1': [x3, x4],
-                'address2': [y3, y4]
-            },
-            ...
-        ]
+        A list of dictionaries containing one position list per address.
     """
 
-    # Collect all scan dimensions.
-    # Each dimension is identified by its rank.
     dimensions = []
-
-    # Also determine how many motors each address has.
     address_motor_count = {}
 
     for address, motors in settings.items():
 
         if motors:
-            address_motor_count[address] = max(
-                motor_settings['index']
-                for _, motor_settings in motors
-            ) + 1
+            # The total number of motors is explicitly provided.
+            address_motor_count[address] = motors[0][1]['motor count']
         else:
             address_motor_count[address] = 0
 
@@ -98,10 +81,9 @@ def make_position_queue(settings: dict) -> list[dict]:
                 'rank': motor_settings['rank'],
             })
 
-    # Sort by rank: rank 1 is the outermost loop.
+    # Rank 0 is the outermost loop.
     dimensions.sort(key=lambda d: d['rank'])
 
-    # Generate values for each scan dimension.
     def generate_values(start, stop, step):
         values = []
 
@@ -131,26 +113,20 @@ def make_position_queue(settings: dict) -> list[dict]:
         for dimension in dimensions
     ]
 
-    # product() changes the rightmost dimension fastest,
-    # exactly like nested C loops:
-    #
-    # for rank1:
-    #     for rank2:
-    #         for rank3:
-    #             ...
     combinations = product(*value_lists)
 
     queue = []
 
     for combination in combinations:
 
-        # Start every address with None for every motor.
+        # Create a position for EVERY motor.
+        # Motors not present in dimensions remain None.
         positions = {
             address: [None] * count
             for address, count in address_motor_count.items()
         }
 
-        # Insert the current value at the appropriate motor index.
+        # Fill in the motors that are actually being scanned.
         for dimension, value in zip(dimensions, combination):
             address = dimension['address']
             index = dimension['index']
@@ -160,7 +136,6 @@ def make_position_queue(settings: dict) -> list[dict]:
         queue.append(positions)
 
     return queue
-
 
 if __name__ == "__main__":
     data =  {'positions': [0.0, 0.0], 'moving': False, 'unit': 'a.u.', 'shot_number': -1, 'shot_positions': [0.0, 0.0]}
